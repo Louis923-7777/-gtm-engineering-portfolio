@@ -1,0 +1,200 @@
+{
+  "name": "02 - LeadForge Prospect Import",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "LeadForge — Importar Prospectos (CSV)",
+        "formDescription": "Sube un CSV con columnas: email, first_name, last_name, company, title, sector",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Archivo CSV",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6dd4afe8-ef72-4403-9eb6-6fca7f6aaf93",
+      "name": "Form: Subir CSV",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [0, 0],
+      "webhookId": "2452859c-2828-4c56-8f21-78d8aa03614e"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "Archivo_CSV",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "id": "bf6e6380-b841-42e6-b193-fe1d69605c1c",
+      "name": "Extract CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [224, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar y validar emails\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nconst seen = new Set();\nconst out = [];\nfor (const item of $input.all()) {\n  const d = item.json;\n  const email = String(d.email || '').trim().toLowerCase();\n  if (!emailRegex.test(email) || seen.has(email)) continue;\n  seen.add(email);\n  out.push({\n    json: {\n      email,\n      first_name: String(d.first_name || '').trim(),\n      last_name: String(d.last_name || '').trim(),\n      company: String(d.company || '').trim(),\n      title: String(d.title || '').trim(),\n      sector: String(d.sector || 'general').trim().toLowerCase(),\n      source: 'csv_import'\n    }\n  });\n}\nreturn out;"
+      },
+      "id": "43c0b1ad-4d7f-4375-bd35-79e8a7d02d44",
+      "name": "Code: Normalizar + Dedup interno",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT LOWER(email) AS email FROM prospects UNION SELECT LOWER(email) FROM suppression_list;",
+        "options": {}
+      },
+      "id": "f38a6096-cf8f-40a6-977d-53f25c6ead68",
+      "name": "PG: Emails existentes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [448, 224],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrar emails que ya existen en DB o en supresión\nconst existing = new Set($('PG: Emails existentes').all().map(i => i.json.email));\nreturn $('Code: Normalizar + Dedup interno').all().filter(i => !existing.has(i.json.email));"
+      },
+      "id": "e1e3f89a-7962-4f08-b2b1-ecd6f6b18659",
+      "name": "Code: Dedup vs DB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 0]
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "ac362cb5-c54a-44b8-a32e-505b7da2d8e7",
+      "name": "Loop (10 por batch)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "x-api-key",
+              "value": "={{ $credentials.httpHeaderAuth.value }}"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'claude-haiku-4-5-20251001',\n  max_tokens: 300,\n  messages: [{\n    role: 'user',\n    content: 'Eres el motor de scoring de leads de ITCPR (consultoría IT en Puerto Rico: ciberseguridad, datacenter, redes, cumplimiento COSSEC/HIPAA, fondos FEMA BRIC). Evalúa este prospecto y responde SOLO JSON válido sin markdown: {\"lead_score\": 0-100, \"sector\": \"gobierno|municipio|salud|cooperativa|privado|solar|general\", \"notes\": \"1 línea de estrategia\"}. Prospecto: ' + JSON.stringify($json)\n  }]\n}) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "eb9becf3-ffe8-4c0b-aa4d-2564f4200df2",
+      "name": "Claude Haiku: Score + Sector",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1104, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parsear respuesta de Claude y combinar con datos del prospecto\nconst out = [];\nconst batchItems = $('Loop (10 por batch)').all();\nconst aiItems = $input.all();\nfor (let i = 0; i < aiItems.length; i++) {\n  const prospect = batchItems[i].json;\n  let ai = { lead_score: 50, sector: prospect.sector, notes: '' };\n  try {\n    const txt = aiItems[i].json.content[0].text.replace(/```json|```/g, '').trim();\n    ai = JSON.parse(txt);\n  } catch (e) { /* fallback a defaults */ }\n  out.push({ json: { ...prospect, lead_score: ai.lead_score, sector: ai.sector || prospect.sector, notes: ai.notes || '' } });\n}\nreturn out;"
+      },
+      "id": "ed9f2c99-4b3e-4823-a230-90e29b7f6fb0",
+      "name": "Code: Parsear AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1328, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO prospects (email, first_name, last_name, company, title, sector, source, lead_score, notes)\nVALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)\nON CONFLICT (email) DO NOTHING;",
+        "options": {
+          "queryReplacement": "={{ [$json.email, $json.first_name, $json.last_name, $json.company, $json.title, $json.sector, $json.source, $json.lead_score, $json.notes] }}"
+        }
+      },
+      "id": "225f826b-2326-4e94-8878-45b9eaaf09a6",
+      "name": "PG: Insertar prospecto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1552, 0],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Postgres account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form: Subir CSV": {
+      "main": [[{"node": "Extract CSV", "type": "main", "index": 0}]]
+    },
+    "Extract CSV": {
+      "main": [[{"node": "Code: Normalizar + Dedup interno", "type": "main", "index": 0}]]
+    },
+    "Code: Normalizar + Dedup interno": {
+      "main": [
+        [{"node": "Code: Dedup vs DB", "type": "main", "index": 0}],
+        [{"node": "PG: Emails existentes", "type": "main", "index": 0}]
+      ]
+    },
+    "PG: Emails existentes": {
+      "main": [[{"node": "Code: Dedup vs DB", "type": "main", "index": 0}]]
+    },
+    "Code: Dedup vs DB": {
+      "main": [[{"node": "Loop (10 por batch)", "type": "main", "index": 0}]]
+    },
+    "Loop (10 por batch)": {
+      "main": [
+        [],
+        [{"node": "Claude Haiku: Score + Sector", "type": "main", "index": 0}]
+      ]
+    },
+    "Claude Haiku: Score + Sector": {
+      "main": [[{"node": "Code: Parsear AI", "type": "main", "index": 0}]]
+    },
+    "Code: Parsear AI": {
+      "main": [[{"node": "PG: Insertar prospecto", "type": "main", "index": 0}]]
+    },
+    "PG: Insertar prospecto": {
+      "main": [[{"node": "Loop (10 por batch)", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["itcpr", "leadforge", "prospects"]
+}

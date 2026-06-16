@@ -1,0 +1,180 @@
+{
+  "name": "03 - LeadForge Email Campaign",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 13 * * 1" },
+            { "field": "cronExpression", "expression": "0 13 * * 3" },
+            { "field": "cronExpression", "expression": "0 13 * * 5" }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Schedule: MON/WED/FRI 9am AST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determinar day_slot basado en día de semana\nconst day = new Date().getDay(); // 0=Dom, 1=Lun, 3=Mie, 5=Vie\nconst slotMap = { 1: 'MON', 3: 'WED', 5: 'FRI' };\nconst daySlot = slotMap[day] || 'MON'; // fallback MON para testing\nreturn [{ json: { day_slot: daySlot, run_date: new Date().toISOString() } }];"
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Code: Get Day Slot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  p.id AS prospect_id,\n  p.email,\n  p.first_name,\n  p.last_name,\n  p.company,\n  p.title,\n  p.sector,\n  p.lead_score,\n  COALESCE(ct_sector.topic, ct_general.topic) AS topic,\n  COALESCE(ct_sector.angle, ct_general.angle) AS angle,\n  COALESCE(ct_sector.id, ct_general.id) AS topic_id\nFROM v_campaign_eligible p\nLEFT JOIN campaign_topics ct_sector\n  ON ct_sector.day_slot = $1\n  AND ct_sector.sector = p.sector\n  AND ct_sector.is_active = true\nLEFT JOIN campaign_topics ct_general\n  ON ct_general.day_slot = $1\n  AND ct_general.sector = 'general'\n  AND ct_general.is_active = true\nWHERE COALESCE(ct_sector.topic, ct_general.topic) IS NOT NULL\nORDER BY p.lead_score DESC\nLIMIT 100;",
+        "options": {
+          "queryReplacement": "={{ [$('Code: Get Day Slot').first().json.day_slot] }}"
+        }
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "PG: Prospects + Topics",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [448, 0],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Loop (5 por batch)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [672, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "x-api-key", "value": "={{ $credentials.httpHeaderAuth.value }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'claude-haiku-4-5-20251001',\n  max_tokens: 500,\n  system: 'Eres el redactor de emails de ITCPR (IBM Silver Partner, consultoría IT en Puerto Rico). Redactas emails profesionales, directos, en español. NUNCA uses: robusto, innovador, de vanguardia, soluciones de clase mundial. Voz activa. Máx 3 párrafos. Firma siempre como Luis Rivera | Director de Tecnología | ITCPR | luis.rivera@itcpr.com | (787) 123-4567',\n  messages: [{\n    role: 'user',\n    content: 'Redacta un email de prospección B2B para: ' + JSON.stringify({\n      destinatario: $json.first_name + ' ' + $json.last_name,\n      empresa: $json.company,\n      cargo: $json.title,\n      sector: $json.sector,\n      tema: $json.topic,\n      angulo: $json.angle\n    }) + '. Responde SOLO JSON válido sin markdown: {\"subject\": \"asunto del email\", \"body\": \"cuerpo completo en texto plano con saltos de línea \\\\n\"}'\n  }]\n}) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Claude Haiku: Redactar Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [896, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parsear respuesta de Claude y combinar con datos del prospecto\nconst batchItems = $('Loop (5 por batch)').all();\nconst aiItems = $input.all();\nconst out = [];\nfor (let i = 0; i < aiItems.length; i++) {\n  const prospect = batchItems[i].json;\n  let email = { subject: 'Consultoría IT para ' + prospect.company, body: 'Estimado ' + prospect.first_name + ',\\n\\nMe comunico de parte de ITCPR.' };\n  try {\n    const txt = aiItems[i].json.content[0].text.replace(/```json|```/g, '').trim();\n    email = JSON.parse(txt);\n  } catch (e) { /* usar fallback */ }\n  out.push({\n    json: {\n      prospect_id: prospect.prospect_id,\n      email: prospect.email,\n      first_name: prospect.first_name,\n      company: prospect.company,\n      topic_id: prospect.topic_id,\n      angle: prospect.angle,\n      subject: email.subject,\n      body: email.body\n    }\n  });\n}\nreturn out;"
+      },
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Code: Parsear Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 0]
+    },
+    {
+      "parameters": {
+        "fromEmail": "luis.rivera@itcpr.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "text": "={{ $json.body }}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "SMTP: Enviar Email",
+      "type": "n8n-nodes-base.sendEmail",
+      "typeVersion": 2.1,
+      "position": [1344, 0],
+      "credentials": {
+        "smtp": {
+          "id": "",
+          "name": "ITCPR Microsoft 365"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO email_log (prospect_id, topic_id, subject, status, sent_at)\nVALUES ($1, $2, $3, 'sent', NOW());\n\nUPDATE prospects\nSET\n  last_email_at = NOW(),\n  emails_sent   = COALESCE(emails_sent, 0) + 1,\n  sequence_step = COALESCE(sequence_step, 0) + 1,\n  updated_at    = NOW()\nWHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [$json.prospect_id, $json.topic_id, $json.subject] }}"
+        }
+      },
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "PG: Log + Update Prospect",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1568, 0],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Postgres account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule: MON/WED/FRI 9am AST": {
+      "main": [[{ "node": "Code: Get Day Slot", "type": "main", "index": 0 }]]
+    },
+    "Code: Get Day Slot": {
+      "main": [[{ "node": "PG: Prospects + Topics", "type": "main", "index": 0 }]]
+    },
+    "PG: Prospects + Topics": {
+      "main": [[{ "node": "Loop (5 por batch)", "type": "main", "index": 0 }]]
+    },
+    "Loop (5 por batch)": {
+      "main": [
+        [],
+        [{ "node": "Claude Haiku: Redactar Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Claude Haiku: Redactar Email": {
+      "main": [[{ "node": "Code: Parsear Email", "type": "main", "index": 0 }]]
+    },
+    "Code: Parsear Email": {
+      "main": [[{ "node": "SMTP: Enviar Email", "type": "main", "index": 0 }]]
+    },
+    "SMTP: Enviar Email": {
+      "main": [[{ "node": "PG: Log + Update Prospect", "type": "main", "index": 0 }]]
+    },
+    "PG: Log + Update Prospect": {
+      "main": [[{ "node": "Loop (5 por batch)", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["itcpr", "leadforge", "email-campaign"]
+}

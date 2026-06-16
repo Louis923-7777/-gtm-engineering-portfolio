@@ -1,0 +1,2182 @@
+﻿{
+  "name": "6-2-2026 V6 LinkedIn AutoPost ITCPR v4 — Master (Perplexity + GPT Mini + Claude + Kie.ai + Gmail + PostgreSQL)_v2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 12 * * 1-5"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 16 * * 1-5"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 21 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "08cf66f7-d20a-43f5-ab97-4d7ca7d9d158",
+      "name": "Schedule 3x Day",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -3520,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const hora = new Date().getUTCHours();\nlet slot, tipo;\n\nif (hora === 12) { slot = 'manana'; tipo = 'tip_tecnico'; }\nelse if (hora === 16) { slot = 'mediodia'; tipo = 'caso_uso'; }\nelse { slot = 'tarde'; tipo = 'thought_leadership'; }\n\nconst diasDesdeEpoch = Math.floor(Date.now() / 86400000);\n\n// CATALOGO TIER 1 — temas estrictamente dentro del dominio ITCPR.\nconst temas_base = [\n  // COMPLIANCE Y GOBERNANZA\n  'BCP e ISO 22301 - cooperativas de credito, controles COSSEC y continuidad operacional',\n  'HIPAA - segmentacion de red, encriptacion y continuidad clinica en salud',\n  'PCI DSS 4.0 - cambios obligatorios 2026 para retail, hoteleria y dealers automotrices',\n  'NIST CSF 2.0 - marco de gobernanza para municipios y organizaciones medianas',\n  '21 CFR Part 11 - validacion de sistemas en farmaceutica y manufactura regulada',\n  'FERPA - proteccion de datos en educacion privada y plan de remediacion',\n  'SOC 2 Type II - preparacion para empresas de servicios profesionales y SaaS',\n  'GLBA y FFIEC - postura de seguridad para cooperativas y entidades financieras',\n  'ISO 27001 - gestion de seguridad de la informacion para empresas medianas',\n  'GDPR y CCPA - implicaciones para empresas PR con clientes internacionales',\n  // CIBERSEGURIDAD EJECUTIVA\n  'Zero Trust Architecture - implementacion practica con Microsoft Entra ID y NIST 800-207',\n  'Ransomware en sector publico - patrones y estrategia de contencion',\n  'Threat hunting con SIEM y EDR - deteccion versus respuesta',\n  'Identity threat detection - la nueva frontera del perimetro corporativo',\n  'Supply chain attacks - riesgo de terceros en infraestructura critica',\n  'Phishing y MFA fatigue - postura defensiva 2026',\n  'Vulnerabilidades OT/IT - manufactura, utilities y procesos industriales',\n  'Cyber insurance - requisitos de underwriters y como cumplirlos',\n  'Pentesting y red teaming - alcance y cuando contratar cada uno',\n  'Hardening de Active Directory - controles que reducen el blast radius',\n  // INFRAESTRUCTURA Y MODERNIZACION\n  'SD-WAN - arquitectura multi-sitio, QoS y reduccion de costos',\n  'Cisco Meraki en retail - POS segmentado, visibilidad centralizada y gestion remota',\n  'Hybrid cloud strategy - que workloads migrar y cuales mantener on-premise',\n  'Kubernetes empresarial - cuando aporta valor y cuando es over-engineering',\n  'Modernizacion de mainframe - patrones de coexistencia y migracion',\n  'Backup inmutable y 3-2-1-1-0 - la referencia actual de recuperabilidad',\n  'Storage tiering y deduplicacion - optimizacion de costo en archivos clinicos y financieros',\n  'Network observability - telemetria, NetFlow y AIOps para reducir MTTR',\n  'Edge computing en manufactura - latencia, autonomia local y sincronizacion cloud',\n  'Hyperconverged infrastructure - donde tiene sentido y donde no',\n  // CONTINUIDAD Y RESILIENCIA\n  'Disaster Recovery as a Service - RTO/RPO realistas y costo total de propiedad',\n  'BCP en cooperativas y financieras - pruebas, documentacion y auditoria COSSEC',\n  'Doble proveedor de telecomunicaciones - diversidad de ruta y redundancia real',\n  'Continuidad clinica ante interrupciones - protocolos IT para hospitales y clinicas',\n  'Tabletop exercises - como disenar simulaciones que la junta tome en serio',\n  // GOBIERNO Y SECTOR PUBLICO\n  'OGP 2026 y contratos TI - BOM, requisitos tecnicos y posicionamiento para licitaciones',\n  'PRITS y modernizacion de agencias - Microsoft Entra ID, Zero Trust y migracion gradual',\n  'Fondos federales para resiliencia IT - HUD CDBG-DR y FEMA BRIC',\n  'Municipios y NIST CSF - postura minima viable para entidades con fondos federales',\n  'Procurement IT en gobierno - diferencia entre BOM tecnico y propuesta consultiva',\n  // SECTORES VERTICALES\n  'Infraestructura IT en salud - HIPAA, segmentacion de red y continuidad clinica',\n  'Retail y sucursales - POS segmentado, PCI DSS y visibilidad centralizada',\n  'Hoteleria - control de acceso unificado, PCI DSS y redes segmentadas para huespedes',\n  'Dealers automotrices - DMS, multi-ubicacion y politica de seguridad consistente',\n  'Flotas de transporte y telemetria segura - datos de ruta, despacho y cumplimiento',\n  'Construccion - movilidad segura en campo, proteccion de planos y continuidad de proyecto',\n  'Educacion privada - FERPA, BYOD y proteccion de datos academicos',\n  'Cooperativas medicas - convergencia HIPAA e ISO 22301',\n  'Manufactura regulada - convergencia OT/IT y 21 CFR Part 11 en produccion',\n  // AI EMPRESARIAL Y AUTOMATIZACION\n  'IBM watsonx - automatizacion empresarial en gobierno y cooperativas',\n  'Microsoft Copilot for M365 - gobernanza de datos antes del despliegue empresarial',\n  'AI governance y EU AI Act - preparacion para empresas con operaciones internacionales',\n  'RAG empresarial - como evitar que un chatbot interno filtre datos sensibles',\n  'AI red teaming - pruebas de seguridad para modelos en produccion',\n  'Document intelligence - automatizacion de RFPs, contratos y procesos administrativos',\n  'AI cost optimization - FinOps aplicado a workloads de inferencia',\n  // ESTRATEGIA EJECUTIVA\n  'CIO scorecard 2026 - metricas que el CFO entiende y la junta valora',\n  'Technical debt - como cuantificarla en lenguaje financiero',\n  'Cloud repatriation - cuando regresar workloads on-premise tiene sentido economico',\n  'Build vs buy vs partner - marco de decision para capacidades IT criticas',\n  'M&A integration - diligencia tecnica y consolidacion de infraestructura',\n  'Vendor consolidation - reduccion de superficie de ataque y simplificacion operativa'\n];\n\nconst N = temas_base.length; // 60 temas\n\n// Slot offset so morning/midday/evening each use a different base index\nconst slotNum = slot === 'manana' ? 0 : slot === 'mediodia' ? 1 : 2;\n\n// Empresa gets topic at (day + slotOffset) % N\n// Personal gets a DIFFERENT topic at (day + slotOffset + 30) % N  (30 = half the catalog away)\nconst idxEmpresa  = (diasDesdeEpoch * 3 + slotNum) % N;\nconst idxPersonal = (diasDesdeEpoch * 3 + slotNum + 45) % N;\n\nconst temaBaseEmpresa  = temas_base[idxEmpresa];\nconst temaBasePersonal = temas_base[idxPersonal];\n\n// Each account gets its own angle type — empresa gets the scheduled tipo, personal gets a different one\nconst tiposDisponibles = ['tip_tecnico', 'caso_uso', 'thought_leadership'];\nconst tipoPersonalIdx  = (tiposDisponibles.indexOf(tipo) + 1) % tiposDisponibles.length;\nconst tipoPersonal     = tiposDisponibles[tipoPersonalIdx];\n\nconst angulos = {\n  tip_tecnico:        (t) => t + ' — controles a implementar, como y con que tecnologia',\n  caso_uso:           (t) => t + ' — como se aborda en el sector: proceso, decision y resultado',\n  thought_leadership: (t) => t + ' — por que importa hoy, riesgo de no actuar y enfoque ejecutivo'\n};\n\nconst temaEmpresa  = angulos[tipo](temaBaseEmpresa);\nconst temaPersonal = angulos[tipoPersonal](temaBasePersonal);\n\nreturn [{ json: {\n  slot,\n  tipo,\n  tipoPersonal,\n  tema:          temaEmpresa,\n  tema_personal: temaPersonal,\n  tema_base:     temaBaseEmpresa,\n  tema_base_personal: temaBasePersonal,\n  hora_utc: hora\n} }];"
+      },
+      "id": "da019dfc-0da9-4a35-83c6-4e2fc00cfa5c",
+      "name": "Determinar Slot y Tema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3296,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5-20251001\", max_tokens: 800, system: \"Eres un editor de contenido especializado en tecnologia empresarial. Devuelve SOLO JSON valido, sin markdown ni bloques de codigo.\\n\\nGenera exactamente:\\n- ideas_clave: array de 3 strings (3-4 lineas cada uno, con contexto y argumentos concretos)\\n- datos_relevantes: array de 3 strings (numeros, versiones, fechas, costos, benchmarks del sector)\\n- insight_principal: 1 string contraintuitivo y desarrollado (2-3 oraciones)\\n\\nMaximo 250 palabras total. Solo hechos verificables en espanol.\", messages: [{ role: \"user\", content: \"Genera ideas_clave, datos_relevantes e insight_principal para: \\\"\" + $json.tema + \"\\\"\\n\\nDevuelve JSON: {\\\"ideas_clave\\\":[],\\\"datos_relevantes\\\":[],\\\"insight_principal\\\":\\\"\\\"}\" }] }) }}",
+        "options": {}
+      },
+      "id": "f0be909f-484d-47b4-9604-97ae3e73179c",
+      "name": "Limpiar con GPT Mini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2880,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst prev = $('Determinar Slot y Tema').first().json;\n\n// Manejar error de API\nif (resp.error || (!resp.content && !resp.choices)) {\n  throw new Error('Limpiar GPT error: ' + (resp.error?.message || resp.msg || JSON.stringify(resp).substring(0,100)));\n}\n\nconst raw = (resp.content?.[0]?.text || resp.choices?.[0]?.message?.content || '').trim();\nlet parsed;\ntry {\n  const cleaned = raw.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/\\s*```$/i,'').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = { ideas_clave: [], datos_relevantes: [], insight_principal: '' };\n}\nreturn [{ json: {\n  ...prev,\n  ideas_clave: parsed.ideas_clave || [],\n  datos_relevantes: parsed.datos_relevantes || [],\n  insight_principal: parsed.insight_principal || ''\n} }];"
+      },
+      "id": "c92ec151-377c-4ab1-9476-62b4db661d45",
+      "name": "Extraer Limpieza GPT",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2608,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5-20251001\", max_tokens: 600, system: \"Eres un arquitecto de contenido. Convierte informacion en estructura clara para redaccion. Devuelve SOLO JSON valido sin markdown.\\n\\nEstructura (max 200 palabras):\\n- hook: Observacion contraintuitiva o dato impactante (1 linea)\\n- problema: Tension u oportunidad operativa (2-3 frases)\\n- insight: Lo que se observa frecuentemente en el sector (2-3 puntos)\\n- ancla_cuantitativa: Dato numerico verificable OBLIGATORIO\\n- ejemplo: Caso o referencia concreta (1-2 frases)\\n- recomendacion: Enfoque consultivo directo (1-2 frases)\\n- cta: Llamada a accion especifica (1 frase)\\n\\nTONO: consultor senior. Neutral. NUNCA nombres de empresas ni verbos acusatorios.\", messages: [{ role: \"user\", content: \"Ideas clave: \" + JSON.stringify($json.ideas_clave) + \"\\nDatos relevantes: \" + JSON.stringify($json.datos_relevantes) + \"\\nInsight principal: \" + $json.insight_principal + \"\\nTema: \" + $json.tema + \"\\nTipo: \" + $json.tipo + \"\\n\\nDevuelve JSON: {\\\"hook\\\":\\\"\\\",\\\"problema\\\":\\\"\\\",\\\"insight\\\":\\\"\\\",\\\"ancla_cuantitativa\\\":\\\"\\\",\\\"ejemplo\\\":\\\"\\\",\\\"recomendacion\\\":\\\"\\\",\\\"cta\\\":\\\"\\\"}\" }] }) }}",
+        "options": {}
+      },
+      "id": "1bc6125e-5e3e-4449-9b17-80239a4d70af",
+      "name": "Estructurar con GPT Mini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2288,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst prev = $('Extraer Limpieza GPT').first().json;\n\n// Manejar error de API\nif (resp.error || (!resp.content && !resp.choices)) {\n  throw new Error('Estructurar GPT error: ' + (resp.error?.message || resp.msg || JSON.stringify(resp).substring(0,100)));\n}\n\nconst raw = (resp.content?.[0]?.text || resp.choices?.[0]?.message?.content || '').trim();\nlet parsed;\ntry {\n  const cleaned = raw.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/\\s*```$/i,'').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = { hook: '', problema: '', insight: '', ancla_cuantitativa: '', ejemplo: '', recomendacion: '', cta: '' };\n}\nreturn [{ json: { ...prev, estructura: parsed } }];"
+      },
+      "id": "e29b1bac-00f3-4b10-a3b2-4e68b691962e",
+      "name": "Extraer Estructura GPT",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $input.first().json;\nconst e = s.estructura || {};\nconst seed = Date.now();\nconst hoy = new Date().toLocaleDateString('es-PR', { timeZone: 'America/Puerto_Rico', year: 'numeric', month: 'long', day: 'numeric' });\n\nconst FORMATOS = [\n  { id: 'TESIS_CONTRAINTUITIVA', inst: 'Abre con una tesis que contradiga la sabiduria convencional del sector. Desarrolla: tesis → evidencia con dato cuantitativo → implicacion ejecutiva. El insight contraintuitivo va AISLADO en linea propia. Cierra con pregunta estrategica.' },\n  { id: 'DATO_PRIMERO', inst: 'Primer parrafo: solo el dato cuantitativo con marco temporal o fuente. Los siguientes parrafos desempaquen el significado para el ejecutivo. Cierra con la implicacion estrategica mas importante. NO hagas lista de acciones.' },\n  { id: 'DISTINCION_CONCEPTUAL', inst: 'Abre exactamente con: \"Conviene separar dos ideas que suelen confundirse: [A] y [B].\" Define la diferencia con precision. Ancla con dato cuantitativo. Frase memorable: una redefinicion del concepto. Cierra preguntando cual dimension merece mas atencion hoy.' },\n  { id: 'PERSPECTIVA_CFO', inst: 'Encuadra desde finanzas: costo de exposicion vs costo de prevencion vs costo de inaccion. Abre con: \"Para un CFO, [tema] se traduce en una conversacion sobre [Y].\" Argumento financiero, no tecnico. Frase memorable: el trade-off economico central.' },\n  { id: 'PATRON_SECTORIAL', inst: 'Abre con: \"La conversacion sobre [tema] esta cambiando de eje en [sector].\" Describe el patron en terminos agregados. Dato cuantitativo como evidencia. Insight: la implicacion mas subestimada. Cierra preguntando donde se concentra el mayor cambio.' },\n  { id: 'MARCO_ANALITICO', inst: 'Abre con: \"Hay tres formas de mirar [tema]. Cada una conduce a decisiones distintas.\" Describe las tres dimensiones (1-2 oraciones c/u). Desarrolla la menos discutida con dato y frase memorable. Cierra: cual dimension merece mas atencion ejecutiva hoy.' },\n  { id: 'TENDENCIA_MADURA', inst: 'Abre con: \"[Tecnologia] esta madurando rapido. Vale revisar como cambia el calculo de [decision ejecutiva].\" Describe que cambio en 2022-2025 con fecha o dato verificable. Insight: la consecuencia menos anticipada.' }\n];\n\nconst diaSemana = new Date().getDay();\nconst slotIdx = { '12_utc': 0, '16_utc': 1, '21_utc': 2 }[s.slot] ?? 0;\nconst formato = FORMATOS[(diaSemana * 3 + slotIdx) % FORMATOS.length];\n\nconst systemText = \n  \"Eres Luis Rivera, CTO de IT Consultants PR (ITCPR), IBM Silver Partner en Bayamon PR.\\n\\n\" +\n  \"TU UNICA TAREA: Convertir la estructura provista en un post LinkedIn premium. NO busques nueva informacion. USA la estructura tal cual.\\n\\n\" +\n  \"CONSONANCIA REGULATORIA:\\n\" +\n  \"- COSSEC / ISO 22301 → cooperativas de credito\\n\" +\n  \"- HIPAA / Joint Commission → salud, clinicas, hospitales\\n\" +\n  \"- 21 CFR Part 11 → farmaceuticas y manufactura regulada\\n\" +\n  \"- PCI DSS → hoteleria, retail, supermercados, dealers\\n\" +\n  \"- FERPA → educacion privada\\n\" +\n  \"- OGP / PRITS / Hacienda → gobierno, agencias, municipios\\n\" +\n  \"- NIST CSF 2.0 / FEMA / HUD → municipios, entidades con fondos federales\\n\\n\" +\n  \"TONO CONSULTOR PROFESIONAL (Booz Allen / Deloitte / McKinsey):\\n\" +\n  \"- Observa patrones del sector. NO senalas, NO juzgas, NO insinuas culpa.\\n\" +\n  \"- NUNCA mencionar nombres de empresas, agencias, hospitales, cooperativas o personas especificas.\\n\" +\n  \"- NUNCA usar verbos acusatorios: fallo, ignoro, omitio, descuido, fue negligente.\\n\" +\n  \"- Hablar de tendencias y patrones agregados. Observacion neutral: 'se observa con frecuencia', 'es comun encontrar'.\\n\" +\n  \"- Postura: 'esto es lo que el sector enfrenta y como se aborda'.\\n\\n\" +\n  \"ANCLA CUANTITATIVA — REGLA INNEGOCIABLE:\\n\" +\n  \"Cada post DEBE incluir al menos UN dato numerico verificable. Sin dato cuantitativo el post no se publica.\\n\" +\n  \"PROHIBIDO: 'significativo', 'sustancial', 'considerable' como sustitutos de cifra concreta.\\n\\n\" +\n  \"DENSIDAD EDITORIAL — 4 a 5 parrafos exactos:\\n\" +\n  \"Estructura: Apertura con dato o tesis → Tension o patron del sector → Insight aislado en linea propia → Recomendacion ejecutiva → Pregunta estrategica.\\n\" +\n  \"Target: 160-190 palabras totales.\\n\\n\" +\n  \"FRASE MEMORABLE: Aislar el insight central en linea propia. Declarativa, contraintuitiva — nunca generica.\\n\\n\" +\n  \"HASHTAGS: Maximo 4-5. Preferir especificos sobre genericos.\\n\\n\" +\n  \"PROHIBIDO ABSOLUTO EN REDACCION:\\n\" +\n  \"- 'robusto', 'innovador', 'de vanguardia', 'sinergia', 'disruptivo', 'nos complace'\\n\" +\n  \"- Auto-promocion explicita. NUNCA mencionar el pais directamente.\\n\\n\" +\n  \"IMAGEN — estandar editorial WIRED / MIT Tech Review:\\n\" +\n  \"Prompt en INGLES. Fotorrealista cinematografico o render 3D. Sin texto, sin logos, sin rostros, sin banderas.\\n\\n\" +\n  \"REGLA CRITICA DE ESPECIFICIDAD VISUAL:\\n\" +\n  \"La imagen DEBE mostrar el SUJETO TECNICO EXACTO del tema.\\n\" +\n  \"NUNCA: personas, ejecutivos, oficinas, escritorios, skylines, edificios, ventanas con ciudad. CERO elementos humanos.\\n\" +\n  \"SIEMPRE: el objeto tecnico exacto del diccionario visual.\\n\\n\" +\n  \"DICCIONARIO VISUAL (usar obligatoriamente):\\n\" +\n  \"- Network/fiber optic → bundle of fiber optic cables extreme close-up macro, bioluminescent cyan and amber light pulses, dark void background, shallow DOF f/1.4\\n\" +\n  \"- SD-WAN → distributed network topology nodes floating in dark space, glowing cyan fiber threads\\n\" +\n  \"- Zero Trust/segmentacion → layered translucent network segments, crimson-blue security perimeter rings\\n\" +\n  \"- Ransomware/SIEM/EDR → digital threat heatmap with red intrusion nodes, dark crimson-black high contrast\\n\" +\n  \"- Identity/MFA → identity verification node with radiating access pathways, electric blue-violet\\n\" +\n  \"- Data center/hardware → premium server blade infrastructure, hot-cold aisle dramatic lighting, charcoal and steel-blue\\n\" +\n  \"- HCI → integrated compute-storage-network nodes, modular stack visualization, steel-blue\\n\" +\n  \"- Storage/SAN/NAS → tiered storage array cross-section, amber to indigo-slate gradient\\n\" +\n  \"- Backup inmutable → three storage media (disk, tape, cloud) geometric layout, cold archive palette\\n\" +\n  \"- Hybrid cloud → on-premise server connected via luminous fiber beam to cloud layer, cold-to-warm gradient\\n\" +\n  \"- HIPAA/salud → server infrastructure, sterile white-teal, abstract patient data flow streams\\n\" +\n  \"- PCI DSS/pagos → payment tokenization tunnel, encrypted transaction particles, deep magenta-violet\\n\" +\n  \"- COSSEC/cooperativas → vault-secure encrypted data nodes glowing amber-gold, financial ledger mesh\\n\" +\n  \"- 21 CFR/farmaceutica → validated system environment, chrome-white sterile, audit trail luminous streams\\n\" +\n  \"- NIST CSF/gobernanza → framework tier visualization, governance control nodes, institutional navy-graphite-bronze\\n\" +\n  \"- OGP/gobierno → civic institutional infrastructure, government archive aesthetic, navy-graphite-bronze\\n\" +\n  \"- AI/GenAI/LLM → GPU compute cluster macro with neural network overlay, violet-magenta gradient\\n\" +\n  \"- AI governance/EU AI Act → AI decision framework with governance boundaries, compliance overlay on neural network, institutional palette\\n\" +\n  \"- IBM watsonx → enterprise AI orchestration, industrial-grade compute, IBM blue-charcoal\\n\" +\n  \"- RPA/automatizacion → workflow automation thread visualization, process node chain, teal-green-white\\n\" +\n  \"- BCP/DR → twin mirrored data centers with failover replication beam, cold-blue and emergency-amber\\n\" +\n  \"- Technical debt → layered legacy code strata beneath modern infrastructure, geological cross-section\\n\" +\n  \"- CIO scorecard → executive dashboard visualization abstract, metric nodes in clean grid\\n\\n\" +\n  \"CALIDAD TECNICA: Cinematic editorial photography OR photorealistic 3D render. Shallow DOF f/1.4-f/2.8. 1:1 aspect ratio. NO text overlays. NO human faces. NO logos. NO flags.\";\n\nreturn [{ json: {\n  model: 'claude-sonnet-4-6',\n  max_tokens: 800,\n  system: [\n    { type: 'text', text: systemText, cache_control: { type: 'ephemeral' } },\n    { type: 'text', text: 'Fecha de hoy: ' + hoy }\n  ],\n  messages: [{\n    role: 'user',\n    content: 'POST 1 — PAGINA ITCPR (cuenta corporativa):\\n' +\n      'Tema: ' + s.tema + '\\nSlot: ' + s.slot + '\\nTipo: ' + s.tipo + '\\nFormato: ' + formato.id + '\\n' +\n      formato.inst + '\\n\\n' +\n      'Estructura aprobada:\\n' +\n      '- Hook: ' + (e.hook || '') + '\\n' +\n      '- Problema: ' + (e.problema || '') + '\\n' +\n      '- Insight: ' + (e.insight || '') + '\\n' +\n      '- Ancla cuantitativa (USAR EXACTA): ' + (e.ancla_cuantitativa || '') + '\\n' +\n      '- Ejemplo: ' + (e.ejemplo || '') + '\\n' +\n      '- Recomendacion: ' + (e.recomendacion || '') + '\\n' +\n      '- CTA: ' + (e.cta || '') + '\\n\\n' +\n      'POST 2 — PERFIL PERSONAL (Luis Rivera, CTO — voz personal, primera persona, tono directo y reflexivo):\\n' +\n      'Tema DIFERENTE: ' + s.tema_personal + '\\nTipo: ' + s.tipoPersonal + '\\n' +\n      'INSTRUCCION: Genera un post COMPLETAMENTE DIFERENTE en tema, angulo y tono al Post 1.\\n' +\n      'Voz: primera persona. Tono: pensamiento en voz alta de un CTO, reflexivo y directo. NO voz corporativa.\\n\\n' +\n      'LONGITUD AMBOS POSTS: 160-190 palabras. Max 5 parrafos. Max 2 oraciones por parrafo.\\n\\n' +\n      'IMAGE PROMPTS — REGLA CRITICA ABSOLUTA: Usa el DICCIONARIO VISUAL del system prompt.\\n' +\n      'PROHIBIDO ABSOLUTO: personas, ejecutivos, siluetas, oficinas, escritorios, sillas, skylines, edificios, ventanas con ciudad. CERO elementos humanos.\\n' +\n      'El sujeto DEBE ser el objeto tecnico exacto del tema segun el diccionario visual.\\n' +\n      'EMPRESA: tema \"' + s.tema + '\" → entrada mas cercana del diccionario visual.\\n' +\n      'PERSONAL: tema \"' + s.tema_personal + '\" → SU entrada del diccionario. Paleta y composicion completamente DIFERENTE a empresa.\\n' +\n      'SIEMPRE: iluminacion cinematografica, paleta exacta del diccionario, shallow DOF f/1.4-f/2.8, 1:1, photorealistic 3D render, no text, no people, no logos, no flags.\\n\\n' +\n      'Responde UNICAMENTE en JSON exacto:\\n' +\n      '{\\n' +\n      '  \"post_empresa\": \"texto post pagina ITCPR, 160-190 palabras\",\\n' +\n      '  \"post_personal\": \"texto post perfil personal Luis Rivera, 160-190 palabras, voz primera persona\",\\n' +\n      '  \"image_prompt_empresa\": \"TECHNICAL OBJECT ONLY from visual dictionary for tema empresa — NO people NO offices NO skylines, cinematic photorealistic 3D render, specific palette from dictionary, shallow DOF f/1.8, 1:1, no text no logos, seed-e-' + seed + '\",\\n' +\n      '  \"image_prompt_personal\": \"DIFFERENT TECHNICAL OBJECT from visual dictionary for tema personal — NO people NO offices NO executives NO skylines NO city views, different composition and palette from empresa, cinematic photorealistic 3D render, shallow DOF f/1.8, 1:1, no text no logos, seed-p-' + seed + '\"\\n' +\n      '}'\n  }],\n  _slot: s.slot,\n  _tema: s.tema,\n  _tema_personal: s.tema_personal,\n  _tema_base: s.tema_base,\n  _tema_base_personal: s.tema_base_personal,\n  _tipo: s.tipo,\n  _tipoPersonal: s.tipoPersonal,\n  _formato: formato.id\n}}];"
+      },
+      "id": "b1d31357-1303-46df-8152-c5406f0dec57",
+      "name": "Construir Body Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1760,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "=YOUR_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-beta ",
+              "value": "prompt-caching-2024-07-31"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: $json.model, max_tokens: $json.max_tokens, system: $json.system, messages: $json.messages } }}",
+        "options": {}
+      },
+      "id": "5d1c709c-4d11-4006-bfa3-74594689b73b",
+      "name": "Generar Contenido con Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1536,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst raw = item?.content?.[0]?.text || item?.choices?.[0]?.message?.content || '';\n\n// Strip markdown code fences\nlet cleaned = raw\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/```\\s*$/g, '')\n  .trim();\n\n// Repara saltos de línea literales dentro de strings JSON\nfunction repairJSON(str) {\n  let inString = false;\n  let escaped  = false;\n  let result   = '';\n  for (let i = 0; i < str.length; i++) {\n    const ch = str[i];\n    if (escaped)                     { result += ch; escaped = false; continue; }\n    if (ch === '\\\\' && inString)     { result += ch; escaped = true;  continue; }\n    if (ch === '\"')                  { inString = !inString; result += ch; continue; }\n    if (inString && ch === '\\n')     { result += '\\\\n'; continue; }\n    if (inString && ch === '\\r')     { result += '\\\\r'; continue; }\n    if (inString && ch === '\\t')     { result += '\\\\t'; continue; }\n    result += ch;\n  }\n  return result;\n}\n\n// Extrae un campo incluso de JSON truncado\nfunction extractField(str, field) {\n  // JSON completo\n  const full = new RegExp('\"' + field + '\"\\\\s*:\\\\s*\"((?:[^\"\\\\\\\\]|\\\\\\\\[\\\\s\\\\S])*)\"');\n  const m1 = str.match(full);\n  if (m1) return m1[1];\n\n  // JSON truncado — sin comilla de cierre\n  const trunc = new RegExp('\"' + field + '\"\\\\s*:\\\\s*\"([\\\\s\\\\S]*)$');\n  const m2 = str.match(trunc);\n  if (m2) return m2[1].replace(/\"\\s*,?\\s*\"image_prompt[\\s\\S]*$/, '').trim();\n\n  return null;\n}\n\nlet parsed;\n\n// Intento 1: parse directo\ntry {\n  parsed = JSON.parse(cleaned);\n} catch(e1) {\n\n  // Intento 2: reparar saltos de línea y parsear\n  try {\n    parsed = JSON.parse(repairJSON(cleaned));\n  } catch(e2) {\n\n    // Intento 3: cerrar JSON truncado y parsear\n    try {\n      let fixed = repairJSON(cleaned).trimEnd();\n      if (!fixed.endsWith('\"') && !fixed.endsWith('}')) fixed += '\"';\n      if (!fixed.endsWith('}')) fixed += '\\n}';\n      parsed = JSON.parse(fixed);\n    } catch(e3) {\n\n      // Intento 4: extracción por regex campo a campo\n      const repaired   = repairJSON(cleaned);\n      const postText   = extractField(repaired, 'post_text');\n      const imagePrompt = extractField(repaired, 'image_prompt');\n\n      if (!postText) {\n        throw new Error(`Parse error Claude dual: ${cleaned.substring(0, 200)}`);\n      }\n      parsed = {\n        post_text:    postText.replace(/\\\\n/g, '\\n'),\n        image_prompt: imagePrompt || ''\n      };\n    }\n  }\n}\n\n// Extract both posts and both image prompts\nconst basePrompt = parsed.image_prompt || '';\nconst postEmpresa  = parsed.post_empresa  || parsed.post_text || '';\nconst postPersonal = parsed.post_personal || parsed.post_text || '';\nconst promptEmpresa  = parsed.image_prompt_empresa  || basePrompt + ', enterprise IT consulting corporate visual';\nconst promptPersonal = parsed.image_prompt_personal || basePrompt + ', executive personal thought leadership visual';\n\nreturn [{ json: {\n  post_text:            postEmpresa,\n  post_empresa:         postEmpresa,\n  post_personal:        postPersonal,\n  image_prompt_empresa: promptEmpresa,\n  image_prompt_personal: promptPersonal,\n  _slot:        item._slot,\n  _tema:        item._tema,\n  _tema_personal: item._tema_personal,\n  _tema_base:   item._tema_base,\n  _tema_base_personal: item._tema_base_personal,\n  _tipo:        item._tipo,\n  _tipoPersonal: item._tipoPersonal,\n  _formato:     item._formato\n}}];"
+      },
+      "id": "bb4b90d2-26e0-498f-a373-068f5aeb90b8",
+      "name": "Extraer Texto y Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1328,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"claude-haiku-4-5-20251001\", max_tokens: 600, system: \"Eres especialista en LinkedIn B2B institucional. Ajusta el post para pagina empresa con maximo impacto. Devuelve SOLO JSON valido sin markdown, con claves post_final (string) y hashtags (array de 5 strings). Preserva tono consultor neutral: NO introducir juicios, nombres de empresas ni verbos acusatorios.\", messages: [{ role: \"user\", content: \"Post empresa: \" + $(\"Extraer Texto y Prompt\").first().json.post_text + \" | Tema: \" + $(\"Extraer Texto y Prompt\").first().json._tema + \" | Tipo: \" + $(\"Extraer Texto y Prompt\").first().json._tipo + \" | Tareas: 1) Minimos ajustes de claridad 2) Exactamente 5 hashtags B2B relevantes 3) Parrafos cortos 4) Preserva datos fechas y terminos tecnicos. Solo JSON con post_final y hashtags.\" }] }) }}",
+        "options": {}
+      },
+      "id": "aec48dbc-3d52-47e5-af9e-4b75626c4474",
+      "name": "Post-procesar Empresa GPT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1104,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst prev = $('Extraer Texto y Prompt').first().json;\nconst raw = (resp.content?.[0]?.text || resp.output?.[0]?.content?.[0]?.text || resp.choices?.[0]?.message?.content || '').trim();\nlet parsed;\ntry {\n  const cleaned = raw.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/\\s*```$/i,'').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = { post_final: prev.post_empresa || prev.post_text || '', hashtags: [] };\n}\nconst hashtags = (parsed.hashtags || []).slice(0,5).map(h => h.startsWith('#') ? h : '#' + h).join(' ');\nconst post_final = (parsed.post_final || prev.post_empresa || prev.post_text || '').trim();\nconst post_text = post_final + (hashtags ? '\\n\\n' + hashtags : '');\nreturn [{ json: { ...prev, post_final_empresa: post_text } }];"
+      },
+      "id": "21910373-aa8e-4b3d-b251-6821acccb79d",
+      "name": "Extraer Post Final Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-approval-email@gmail.com",
+        "subject": "=[ITCPR AutoPost] ✅ Revisión Página ITCPR — {{ $('Extraer Texto y Prompt').first().json._tema_base || $('Extraer Texto y Prompt').first().json._tema }}",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Calibri,sans-serif;max-width:660px;margin:0 auto;padding:0;background:#f0f4f8'><div style='background:#2182BF;padding:28px 24px;text-align:center'><h2 style='color:white;margin:0;font-size:21px;font-weight:700'>📋 Revisión Requerida — Página ITCPR</h2><p style='color:#c8e0f4;margin:8px 0 0 0;font-size:13px'>LinkedIn AutoPost · IT Consultants PR</p></div><div style='background:white;padding:20px 24px;border-bottom:1px solid #e8edf2'><table style='width:100%;font-size:13px;color:#555'><tr><td><strong>Tema:</strong> {{ $('Extraer Texto y Prompt').first().json._tema }}</td></tr><tr style='margin-top:4px'><td><strong>Slot:</strong> {{ $('Extraer Texto y Prompt').first().json._slot }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $('Extraer Texto y Prompt').first().json._tipo }} &nbsp;|&nbsp; <strong>Formato:</strong> {{ $('Extraer Texto y Prompt').first().json._formato }}</td></tr></table></div><div style='background:white;padding:20px 24px'><h4 style='color:#2182BF;margin:0 0 10px 0;font-size:14px'>📝 Texto del Post (Página ITCPR):</h4><div style='background:#f0f7ff;padding:16px;border-left:4px solid #2182BF;border-radius:4px;margin-bottom:20px'><p style='margin:0;white-space:pre-wrap;color:#262223;font-size:13px;line-height:1.6'>{{ $('Extraer Post Final Empresa').first().json.post_final_empresa }}</p></div><h4 style='color:#2182BF;margin:0 0 10px 0;font-size:14px'>🖼️ Imagen Generada (Preview):</h4><div style='text-align:center;margin-bottom:20px'><img src='{{ $json.image_url_empresa }}' style='max-width:100%;border-radius:8px;border:1px solid #ddd;display:block;margin:0 auto' /><p style='font-size:11px;color:#999;margin:8px 0 0 0'>Imagen IA específica al tema · Revisión visual recomendada</p></div></div><div style='text-align:center;padding:28px 24px;background:#f8fafc;border-top:1px solid #e8edf2'><a href='{{ $execution.resumeUrl }}?action=approve' style='background:#28a745;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:15px;font-weight:bold;margin-right:12px;display:inline-block'>✅ APROBAR Y PUBLICAR</a><a href='{{ $execution.resumeUrl }}?action=reject' style='background:#dc3545;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block'>❌ RECHAZAR</a></div><div style='text-align:center;padding:14px;background:#f0f4f8'><p style='color:#bbb;font-size:11px;margin:0'>ITCPR LeadForge AI — IT Consultants PR, Inc. | Bayamón, Puerto Rico</p></div></body></html>",
+        "options": {}
+      },
+      "id": "84f6dfed-29ee-4d67-af22-074a1c2ade39",
+      "name": "Enviar Email Aprobación Empresa",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        112
+      ],
+      "webhookId": "857f7403-f49b-451a-a5a3-b2b0c35a6980",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DJxIiGgBgUcg32r8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "719c2c04-d49c-432a-bf99-f8c0af5517e4",
+      "name": "Wait Aprobación Empresa",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        112
+      ],
+      "webhookId": "wait-aprobacion-empresa"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "ce1",
+              "leftValue": "={{ $json.query.action }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b175f180-8eaa-47c2-863f-1c5b5acde71a",
+      "name": "Aprobado Empresa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model:'flux-2/flex-text-to-image', input:{ prompt: $('Extraer Texto y Prompt').first().json.image_prompt_empresa + ', cinematic editorial photography OR photorealistic 3D render, shallow depth of field f/1.8, commercial premium finish, ultra-high detail, no text overlays, no human faces, no logos, no flags', aspect_ratio:'1:1', resolution:'1K', nsfw_checker:false } }) }}",
+        "options": {}
+      },
+      "id": "0d79629a-e423-4eae-942c-79abf772db08",
+      "name": "Crear Tarea Kie.ai Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nif (resp.code !== 200) throw new Error('Kie.ai empresa error: ' + (resp.msg || JSON.stringify(resp)));\nconst prev = $('Extraer Texto y Prompt').first().json;\nreturn [{ json: { ...prev, task_id_empresa: resp.data.taskId } }];"
+      },
+      "id": "92ed72b2-50e5-4d1d-b31b-c58354f123e2",
+      "name": "Extraer Task ID Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "6cffc500-220d-4bf6-8bdd-56d529cd6e02",
+      "name": "Wait 45s Imagen Empresa",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "webhookId": "wait-kie-empresa"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.task_id_empresa }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "caaa5ba8-5f35-4804-a961-844e53133e3e",
+      "name": "Consultar Estado Kie.ai Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "ile1",
+              "leftValue": "={{ $json.data?.state }}",
+              "rightValue": "succeed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2b321c53-b4e0-4020-adf6-7f00611df47a",
+      "name": "Imagen Lista Empresa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst state = resp.data?.state;\nconst failCode = resp.data?.failCode;\nconst resultRaw = resp.data?.resultJson;\n\nif (state === 'fail') {\n  throw new Error('Kie.ai fallo interno (codigo ' + (failCode||'?') + ') — reintentando en 90s');\n}\nif (!resultRaw || resultRaw === '' || resultRaw === 'null') {\n  throw new Error('Imagen empresa no lista aun — estado: ' + (state || '?'));\n}\nlet rj;\ntry { rj = typeof resultRaw === 'string' ? JSON.parse(resultRaw) : resultRaw; }\ncatch(e) { throw new Error('resultJson invalido empresa'); }\nconst imageUrl = rj?.resultUrls?.[0] || rj?.url || rj?.imageUrl;\nif (!imageUrl) throw new Error('Sin URL imagen empresa');\nconst prev = $('Extraer Task ID Empresa').first().json;\nreturn [{ json: { ...prev, image_url_empresa: imageUrl, image_url: imageUrl } }];"
+      },
+      "id": "6e80ed16-222e-4914-a033-1e13938d5726",
+      "name": "Extraer URL Imagen Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ registerUploadRequest:{ recipes:['urn:li:digitalmediaRecipe:feedshare-image'], owner:'urn:li:organization:YOUR_ORG_ID', serviceRelationships:[{ relationshipType:'OWNER', identifier:'urn:li:userGeneratedContent' }] } }) }}",
+        "options": {}
+      },
+      "id": "dca945e5-4cc8-459e-a299-36cbc3ca2adc",
+      "name": "Registrar Upload Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1328,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst uploadUrl = resp.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;\nconst assetUrn = resp.value.asset;\nconst prev = $('Extraer URL Imagen Empresa').first().json;\nreturn [{ json: { ...prev, upload_url: uploadUrl, asset_urn: assetUrn } }];"
+      },
+      "id": "5eae81c2-a3fd-4611-9b36-82d7b53cfc42",
+      "name": "Extraer Upload Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Extraer URL Imagen Empresa').first().json.image_url_empresa }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "d77a5dab-a2d0-499b-a568-088a1807dbb5",
+      "name": "Descargar Imagen Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $('Extraer Upload Empresa').first().json.upload_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "image/jpeg"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "435fd155-89ac-4d4e-a070-80805ba341c9",
+      "name": "Subir Imagen Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1984,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ author:'urn:li:organization:YOUR_ORG_ID', lifecycleState:'PUBLISHED', specificContent:{ 'com.linkedin.ugc.ShareContent':{ shareCommentary:{ text: $('Extraer Post Final Empresa').first().json.post_final_empresa }, shareMediaCategory:'IMAGE', media:[{ status:'READY', media: $('Extraer Upload Empresa').first().json.asset_urn }] } }, visibility:{ 'com.linkedin.ugc.MemberNetworkVisibility':'PUBLIC' } }) }}",
+        "options": {}
+      },
+      "id": "e9bfbc1f-dbeb-4ede-ae01-0c5446daee3b",
+      "name": "Publicar LinkedIn Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-approval-email@gmail.com",
+        "subject": "=[ITCPR AutoPost] 🎉 Publicado — Página ITCPR | {{ $('Extraer Texto y Prompt').first().json._tema }}",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Calibri,sans-serif;max-width:620px;margin:0 auto;padding:0;background:#f0f4f8'><div style='background:#2182BF;padding:24px;text-align:center'><h2 style='color:white;margin:0;font-size:20px'>🎉 Publicado en LinkedIn — Página ITCPR</h2></div><div style='background:white;padding:20px 24px'><p style='color:#555;margin:0 0 6px 0'><strong>Tema:</strong> {{ $('Extraer Texto y Prompt').first().json._tema }}</p><p style='color:#555;margin:0 0 6px 0'><strong>Slot:</strong> {{ $('Extraer Texto y Prompt').first().json._slot }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $('Extraer Texto y Prompt').first().json._tipo }}</p><p style='color:#555;margin:0 0 20px 0'><strong>Publicado:</strong> {{ new Date().toLocaleString(\"es-PR\", {timeZone:\"America/Puerto_Rico\"}) }}</p><hr style='border:none;border-top:1px solid #eee;margin:0 0 16px 0'><h4 style='color:#2182BF;margin:0 0 10px 0;font-size:14px'>📝 Texto Publicado:</h4><div style='background:#f0f7ff;padding:14px;border-left:4px solid #2182BF;border-radius:4px;margin-bottom:16px'><p style='margin:0;white-space:pre-wrap;color:#262223;font-size:13px;line-height:1.6'>{{ $('Extraer Post Final Empresa').first().json.post_final_empresa }}</p></div><h4 style='color:#2182BF;margin:0 0 10px 0;font-size:14px'>🖼️ Imagen Publicada:</h4><div style='text-align:center;margin-bottom:8px'><img src='{{ $('Extraer URL Imagen Empresa').first().json.image_url_empresa }}' style='max-width:100%;border-radius:8px;border:1px solid #ddd;display:block;margin:0 auto' /></div></div><div style='text-align:center;padding:14px;background:#f0f4f8'><p style='color:#bbb;font-size:11px;margin:0'>ITCPR LeadForge AI — IT Consultants PR, Inc.</p></div></body></html>",
+        "options": {}
+      },
+      "id": "310afb1d-aaa5-4403-866e-74a2f04c4f4d",
+      "name": "Email Publicado Empresa",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        0
+      ],
+      "webhookId": "0c22850c-4bba-492c-8cd8-5790a72078b9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DJxIiGgBgUcg32r8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Imagen empresa no lista, reintentando...'); const prev=$('Extraer Task ID Empresa').first().json; return [{ json: prev }];"
+      },
+      "id": "5335cc9d-eb11-4140-b2f6-7f949bae13f8",
+      "name": "Log Error Imagen Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "de542fe2-16a7-43cb-89c6-d7b9502d30b3",
+      "name": "Wait Retry Imagen Empresa",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        160
+      ],
+      "webhookId": "wait-retry-empresa"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.task_id_empresa }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7444e253-1d5f-488c-879a-58378101956f",
+      "name": "Consultar Estado Retry Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "irle1",
+              "leftValue": "={{ $json.data?.state }}",
+              "rightValue": "succeed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "623ff6e9-06ce-40a4-8c45-d97b02a486d0",
+      "name": "Imagen Lista Retry Empresa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Imagen empresa aún no lista, retry 2...'); const prev=$('Extraer Task ID Empresa').first().json; return [{ json: prev }];"
+      },
+      "id": "e1e3e367-1e39-4d6b-b99c-881df34824c4",
+      "name": "Log Error Final Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "5ee0f48b-ac93-4c64-8dba-4d1afbebac2e",
+      "name": "Wait Retry2 Imagen Empresa",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        304
+      ],
+      "webhookId": "wait-retry2-empresa"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.task_id_empresa }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8178fb8e-3447-4276-8588-3b0ac220c8ba",
+      "name": "Consultar Estado Retry2 Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2432,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "ir2e1",
+              "leftValue": "={{ $json.data?.state }}",
+              "rightValue": "succeed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "db740f04-86fd-4889-bf17-8ee0f0c3a4c3",
+      "name": "Imagen Lista Retry2 Empresa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.error('Imagen empresa falló definitivamente'); return [{ json: { status:'error_imagen_empresa', task_id: $('Extraer Task ID Empresa').first().json.task_id_empresa } }];"
+      },
+      "id": "4977ca14-9938-4d05-b13e-16d29049bc01",
+      "name": "Log Error Definitivo Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const p=$('Extraer Post Final Empresa').first().json; return [{ json: { status:'rechazado', owner:'empresa', tema:p.tema, post:p.post_final_empresa?.substring(0,100), rejected_at:new Date().toISOString() } }];"
+      },
+      "id": "92786e28-b435-4c9d-9118-1144a4b2d64b",
+      "name": "Log Rechazado Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-approval-email@gmail.com",
+        "subject": "=[ITCPR AutoPost] ❌ Rechazado — Página ITCPR | {{ $('Extraer Texto y Prompt').first().json._tema }}",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Calibri,sans-serif;max-width:620px;margin:0 auto;padding:0;background:#f0f4f8'><div style='background:#dc3545;padding:24px;text-align:center'><h2 style='color:white;margin:0;font-size:20px'>❌ Post Rechazado — Página ITCPR</h2></div><div style='background:white;padding:20px 24px'><p style='color:#555;margin:0 0 6px 0'><strong>Tema:</strong> {{ $('Extraer Texto y Prompt').first().json._tema }}</p><p style='color:#555;margin:0 0 6px 0'><strong>Slot:</strong> {{ $('Extraer Texto y Prompt').first().json._slot }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $('Extraer Texto y Prompt').first().json._tipo }}</p><p style='color:#666;margin:16px 0 0 0'>El post fue rechazado y no se publicará en LinkedIn.</p><hr style='border:none;border-top:1px solid #eee;margin:16px 0'><h4 style='color:#666;margin:0 0 10px 0;font-size:14px'>📝 Texto que fue rechazado:</h4><div style='background:#fff5f5;padding:14px;border-left:4px solid #dc3545;border-radius:4px'><p style='margin:0;white-space:pre-wrap;color:#555;font-size:13px;line-height:1.6'>{{ $('Extraer Post Final Empresa').first().json.post_final_empresa }}</p></div></div><div style='text-align:center;padding:14px;background:#f0f4f8'><p style='color:#bbb;font-size:11px;margin:0'>ITCPR LeadForge AI — IT Consultants PR, Inc.</p></div></body></html>",
+        "options": {}
+      },
+      "id": "5a9bbc79-fa82-452f-a6ff-8830bb6e186b",
+      "name": "Email Descartado Empresa",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        224,
+        224
+      ],
+      "webhookId": "728742b8-f1ad-48f8-a454-1cffb8e62fae",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DJxIiGgBgUcg32r8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"claude-haiku-4-5-20251001\", max_tokens: 600, system: \"Eres especialista en LinkedIn para perfiles personales de ejecutivos. Ajusta el post para Luis Rivera, CTO de ITCPR. Tono: consultor senior, voz propia, analitico. Devuelve SOLO JSON valido sin markdown, con claves post_final (string) y hashtags (array de 5 strings).\", messages: [{ role: \"user\", content: \"Post personal: \" + $(\"Extraer Texto y Prompt\").first().json.post_personal + \" | Tema: \" + $(\"Extraer Texto y Prompt\").first().json._tema + \" | Tipo: \" + $(\"Extraer Texto y Prompt\").first().json._tipoPersonal + \" | Tareas: 1) Minimos ajustes 2) 5 hashtags ejecutivo+sector 3) Tono CTO personal autentico. Solo JSON con post_final y hashtags.\" }] }) }}",
+        "options": {}
+      },
+      "id": "048a7e32-95cb-46bf-965f-f2ca96d5bc70",
+      "name": "Post-procesar Personal GPT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1104,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst prev = $('Extraer Post Final Empresa').first().json;\nconst raw = (resp.content?.[0]?.text || resp.output?.[0]?.content?.[0]?.text || resp.choices?.[0]?.message?.content || '').trim();\nlet parsed;\ntry {\n  const cleaned = raw.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/\\s*```$/i,'').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = { post_final: prev.post_personal || '', hashtags: [] };\n}\nconst hashtags = (parsed.hashtags || []).slice(0,5).map(h => h.startsWith('#') ? h : '#' + h).join(' ');\nconst post_final_personal = (parsed.post_final || prev.post_personal || '').trim() + (hashtags ? '\\n\\n' + hashtags : '');\nreturn [{ json: { ...prev, post_final_personal, post_final_empresa: prev.post_final_empresa } }];"
+      },
+      "id": "a368af61-dc24-48f8-882b-51ebb5444d18",
+      "name": "Extraer Post Final Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-personal-email@gmail.com",
+        "subject": "=[ITCPR AutoPost] ✅ Revisión Perfil Personal — {{ $('Extraer Texto y Prompt').first().json._tema }}",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Calibri,sans-serif;max-width:660px;margin:0 auto;padding:0;background:#f0f4f8'><div style='background:#00704A;padding:28px 24px;text-align:center'><h2 style='color:white;margin:0;font-size:21px;font-weight:700'>📋 Revisión Requerida — Perfil Personal</h2><p style='color:#a8dfc6;margin:8px 0 0 0;font-size:13px'>LinkedIn AutoPost · Luis D. Rivera Ríos</p></div><div style='background:white;padding:20px 24px;border-bottom:1px solid #e8edf2'><table style='width:100%;font-size:13px;color:#555'><tr><td><strong>Tema:</strong> {{ $('Extraer Texto y Prompt').first().json._tema }}</td></tr><tr><td><strong>Slot:</strong> {{ $('Extraer Texto y Prompt').first().json._slot }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $('Extraer Texto y Prompt').first().json._tipo }} &nbsp;|&nbsp; <strong>Formato:</strong> {{ $('Extraer Texto y Prompt').first().json._formato }}</td></tr></table></div><div style='background:white;padding:20px 24px'><h4 style='color:#00704A;margin:0 0 10px 0;font-size:14px'>📝 Texto del Post (Perfil Personal):</h4><div style='background:#f0fff8;padding:16px;border-left:4px solid #00704A;border-radius:4px;margin-bottom:20px'><p style='margin:0;white-space:pre-wrap;color:#262223;font-size:13px;line-height:1.6'>{{ $('Extraer Post Final Personal').first().json.post_final_personal }}</p></div><h4 style='color:#00704A;margin:0 0 10px 0;font-size:14px'>🖼️ Imagen Generada (Preview):</h4><div style='text-align:center;margin-bottom:20px'><img src='{{ $json.image_url_personal }}' style='max-width:100%;border-radius:8px;border:1px solid #ddd;display:block;margin:0 auto' /><p style='font-size:11px;color:#999;margin:8px 0 0 0'>Imagen IA específica al tema · Revisión visual recomendada</p></div></div><div style='text-align:center;padding:28px 24px;background:#f8fafc;border-top:1px solid #e8edf2'><a href='{{ $execution.resumeUrl }}?action=approve' style='background:#28a745;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:15px;font-weight:bold;margin-right:12px;display:inline-block'>✅ APROBAR Y PUBLICAR</a><a href='{{ $execution.resumeUrl }}?action=reject' style='background:#dc3545;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block'>❌ RECHAZAR</a></div><div style='text-align:center;padding:14px;background:#f0f4f8'><p style='color:#bbb;font-size:11px;margin:0'>ITCPR LeadForge AI — IT Consultants PR, Inc. | Bayamón, Puerto Rico</p></div></body></html>",
+        "options": {}
+      },
+      "id": "f52b4893-270a-43db-aad2-90075898bbd3",
+      "name": "Enviar Email Aprobación Personal",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        512
+      ],
+      "webhookId": "5b2c0889-fd7b-416e-932e-f5ec3b2fceaa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DJxIiGgBgUcg32r8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "2b401a0d-0156-44c0-8601-b206b28bb1ad",
+      "name": "Wait Aprobación Personal",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        512
+      ],
+      "webhookId": "wait-aprobacion-personal"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "cp1",
+              "leftValue": "={{ $json.query.action }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aff3f211-0098-4fd0-bbc9-f22a293fff04",
+      "name": "Aprobado Personal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model:'flux-2/flex-text-to-image', input:{ prompt: $('Extraer Texto y Prompt').first().json.image_prompt_personal + ', cinematic editorial photography OR photorealistic 3D render, shallow depth of field f/1.8, commercial premium finish, ultra-high detail, no text overlays, no human faces, no logos, no flags', aspect_ratio:'1:1', resolution:'1K', nsfw_checker:false } }) }}",
+        "options": {}
+      },
+      "id": "43263701-1693-4e95-8038-c53e1703f27c",
+      "name": "Crear Tarea Kie.ai Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nif (resp.code !== 200) throw new Error('Kie.ai personal error: ' + (resp.msg || JSON.stringify(resp)));\nconst prev = $('Extraer Texto y Prompt').first().json;\nreturn [{ json: { ...prev, task_id_personal: resp.data.taskId } }];"
+      },
+      "id": "48faee68-cdeb-47cb-952a-13d9301fa911",
+      "name": "Extraer Task ID Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "f2f9fd85-a8d1-4694-953e-a110e880b13e",
+      "name": "Wait 45s Imagen Personal",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        448,
+        400
+      ],
+      "webhookId": "wait-kie-personal"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.task_id_personal }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "90f3acc8-6165-4766-8545-d0ef4b8ce2fb",
+      "name": "Consultar Estado Kie.ai Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "ilp1",
+              "leftValue": "={{ $json.data?.state }}",
+              "rightValue": "succeed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8c00cd5c-ae45-4fdd-ad5d-79cd8089f492",
+      "name": "Imagen Lista Personal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst state = resp.data?.state;\nconst failCode = resp.data?.failCode;\nconst resultRaw = resp.data?.resultJson;\n\nif (state === 'fail') {\n  throw new Error('Kie.ai fallo interno (codigo ' + (failCode||'?') + ') — reintentando en 90s');\n}\nif (!resultRaw || resultRaw === '' || resultRaw === 'null') {\n  throw new Error('Imagen personal no lista aun — estado: ' + (state || '?'));\n}\nlet rj;\ntry { rj = typeof resultRaw === 'string' ? JSON.parse(resultRaw) : resultRaw; }\ncatch(e) { throw new Error('resultJson invalido personal'); }\nconst imageUrl = rj?.resultUrls?.[0] || rj?.url || rj?.imageUrl;\nif (!imageUrl) throw new Error('Sin URL imagen personal');\nconst prev = $('Extraer Task ID Personal').first().json;\nreturn [{ json: { ...prev, image_url_personal: imageUrl, image_url: imageUrl } }];"
+      },
+      "id": "012c3e1b-3fb2-4709-93fb-8a09da0551e1",
+      "name": "Extraer URL Imagen Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ registerUploadRequest:{ recipes:['urn:li:digitalmediaRecipe:feedshare-image'], owner:'urn:li:person:IbvfGuH6E7', serviceRelationships:[{ relationshipType:'OWNER', identifier:'urn:li:userGeneratedContent' }] } }) }}",
+        "options": {}
+      },
+      "id": "bdff2d06-2c8e-43ed-8103-d7fcefcf8cbb",
+      "name": "Registrar Upload Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1328,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst uploadUrl = resp.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;\nconst assetUrn = resp.value.asset;\nconst prev = $('Extraer URL Imagen Personal').first().json;\nreturn [{ json: { ...prev, upload_url: uploadUrl, asset_urn: assetUrn } }];"
+      },
+      "id": "9ddd5cb0-b267-403c-b2dc-1293337966a1",
+      "name": "Extraer Upload Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Extraer URL Imagen Personal').first().json.image_url_personal }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "effd52c1-27f5-43fe-9c85-00aad1dd17d5",
+      "name": "Descargar Imagen Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $('Extraer Upload Personal').first().json.upload_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "image/jpeg"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "92ba3c33-b8a9-406e-ac23-a8e17249698b",
+      "name": "Subir Imagen Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1984,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ author:'urn:li:person:IbvfGuH6E7', lifecycleState:'PUBLISHED', specificContent:{ 'com.linkedin.ugc.ShareContent':{ shareCommentary:{ text: $('Extraer Post Final Personal').first().json.post_final_personal }, shareMediaCategory:'IMAGE', media:[{ status:'READY', media: $('Extraer Upload Personal').first().json.asset_urn }] } }, visibility:{ 'com.linkedin.ugc.MemberNetworkVisibility':'PUBLIC' } }) }}",
+        "options": {}
+      },
+      "id": "1e1bd970-9b95-4120-b3ff-24824e3f499f",
+      "name": "Publicar LinkedIn Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2208,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-personal-email@gmail.com",
+        "subject": "=[ITCPR AutoPost] 🎉 Publicado — Perfil Personal | {{ $('Extraer Texto y Prompt').first().json._tema }}",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Calibri,sans-serif;max-width:620px;margin:0 auto;padding:0;background:#f0f4f8'><div style='background:#00704A;padding:24px;text-align:center'><h2 style='color:white;margin:0;font-size:20px'>🎉 Publicado en LinkedIn — Perfil Personal</h2></div><div style='background:white;padding:20px 24px'><p style='color:#555;margin:0 0 6px 0'><strong>Tema:</strong> {{ $('Extraer Texto y Prompt').first().json._tema }}</p><p style='color:#555;margin:0 0 6px 0'><strong>Slot:</strong> {{ $('Extraer Texto y Prompt').first().json._slot }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $('Extraer Texto y Prompt').first().json._tipo }}</p><p style='color:#555;margin:0 0 20px 0'><strong>Publicado:</strong> {{ new Date().toLocaleString(\"es-PR\", {timeZone:\"America/Puerto_Rico\"}) }}</p><hr style='border:none;border-top:1px solid #eee;margin:0 0 16px 0'><h4 style='color:#00704A;margin:0 0 10px 0;font-size:14px'>📝 Texto Publicado:</h4><div style='background:#f0fff8;padding:14px;border-left:4px solid #00704A;border-radius:4px;margin-bottom:16px'><p style='margin:0;white-space:pre-wrap;color:#262223;font-size:13px;line-height:1.6'>{{ $('Extraer Post Final Personal').first().json.post_final_personal }}</p></div><h4 style='color:#00704A;margin:0 0 10px 0;font-size:14px'>🖼️ Imagen Publicada:</h4><div style='text-align:center;margin-bottom:8px'><img src='{{ $('Extraer URL Imagen Personal').first().json.image_url_personal }}' style='max-width:100%;border-radius:8px;border:1px solid #ddd;display:block;margin:0 auto' /></div></div><div style='text-align:center;padding:14px;background:#f0f4f8'><p style='color:#bbb;font-size:11px;margin:0'>ITCPR LeadForge AI — IT Consultants PR, Inc.</p></div></body></html>",
+        "options": {}
+      },
+      "id": "71193456-b232-49ae-b52f-f6f77e6d45f6",
+      "name": "Email Publicado Personal",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        400
+      ],
+      "webhookId": "05568dad-159d-44fb-9f45-33f459d55247",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DJxIiGgBgUcg32r8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO posts_linkedin (\n    texto_empresa, texto_personal, tema, slot, categoria,\n    urn_empresa, urn_personal,\n    image_url_empresa, image_url_personal,\n    tokens_perplexity, tokens_gpt_limpieza, tokens_gpt_estruct,\n    tokens_claude, tokens_gpt_postproc, costo_usd,\n    publicado_en, status\n)\nVALUES (\n    $1, $2, $3, $4, $5,\n    $6, $7,\n    $8, $9,\n    $10, $11, $12,\n    $13, $14, $15,\n    NOW(), 'publicado'\n)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "=={{ $('Extraer Post Final Empresa').first().json.post_final_empresa }},={{ $('Extraer Post Final Personal').first().json.post_final_personal }},={{ $('Extraer Post Final Empresa').first().json.tema }},={{ $('Extraer Post Final Empresa').first().json.slot }},={{ $('Determinar Slot y Tema').first().json.categoria || 'general' }},={{ $('Publicar LinkedIn Empresa').first().json.id || '' }},={{ $('Publicar LinkedIn Personal').first().json.id || '' }},={{ $('Extraer URL Imagen Empresa').first().json.image_url || '' }},={{ $('Extraer URL Imagen Personal').first().json.image_url || '' }},={{ 0 }},={{ $('Limpiar con GPT Mini').first().json.usage?.total_tokens || 0 }},={{ $('Estructurar con GPT Mini').first().json.usage?.total_tokens || 0 }},={{ ($('Generar Contenido con Claude').first().json.usage?.input_tokens || 0) + ($('Generar Contenido con Claude').first().json.usage?.output_tokens || 0) }},={{ ($('Post-procesar Empresa GPT').first().json.usage?.total_tokens || 0) + ($('Post-procesar Personal GPT').first().json.usage?.total_tokens || 0) }},={{ (($('Limpiar con GPT Mini').first().json.usage?.total_tokens || 0) * 0.00000015) + (($('Estructurar con GPT Mini').first().json.usage?.total_tokens || 0) * 0.00000015) + ((($('Generar Contenido con Claude').first().json.usage?.input_tokens || 0) * 0.000003) + (($('Generar Contenido con Claude').first().json.usage?.output_tokens || 0) * 0.000015)) + ((($('Post-procesar Empresa GPT').first().json.usage?.total_tokens || 0) + ($('Post-procesar Personal GPT').first().json.usage?.total_tokens || 0)) * 0.00000015) }}"
+        }
+      },
+      "id": "0d322fdc-169f-4ae5-b013-dbe0684596c5",
+      "name": "Guardar en PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2640,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "rQII5oRGuyLwaCMg",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Imagen personal no lista, reintentando...'); const prev=$('Extraer Task ID Personal').first().json; return [{ json: prev }];"
+      },
+      "id": "74b077dc-717f-4f4e-b48a-edad0c572faf",
+      "name": "Log Error Imagen Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "f06fed11-807a-49a6-a909-d1c1e75b9fd5",
+      "name": "Wait Retry Imagen Personal",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        560
+      ],
+      "webhookId": "wait-retry-personal"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.task_id_personal }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de46d7b9-cf15-46f7-97c4-bf01e890ddbe",
+      "name": "Consultar Estado Retry Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "irlp1",
+              "leftValue": "={{ $json.data?.state }}",
+              "rightValue": "succeed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "28f39448-37ea-4248-bb73-549c92a88c3f",
+      "name": "Imagen Lista Retry Personal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Imagen personal aún no lista, retry 2...'); const prev=$('Extraer Task ID Personal').first().json; return [{ json: prev }];"
+      },
+      "id": "09b99ea4-64db-4163-bcc6-be5c3a02f986",
+      "name": "Log Error Final Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "5d838673-250e-4e50-9ddb-d592dd3f4c76",
+      "name": "Wait Retry2 Imagen Personal",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        704
+      ],
+      "webhookId": "wait-retry2-personal"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.task_id_personal }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_KIE_AI_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "480a9cdf-2665-49e0-9e45-af7fcc8ccf43",
+      "name": "Consultar Estado Retry2 Personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2432,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "ir2p1",
+              "leftValue": "={{ $json.data?.state }}",
+              "rightValue": "succeed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8c48849b-6604-4304-b637-d8963733ee8e",
+      "name": "Imagen Lista Retry2 Personal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.error('Imagen personal falló definitivamente'); return [{ json: { status:'error_imagen_personal', task_id: $('Extraer Task ID Personal').first().json.task_id_personal } }];"
+      },
+      "id": "8ed207b9-5051-4a3c-9325-721c11463626",
+      "name": "Log Error Definitivo Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const p=$('Extraer Post Final Personal').first().json; return [{ json: { status:'rechazado', owner:'personal', tema:p.tema, post:p.post_final_personal?.substring(0,100), rejected_at:new Date().toISOString() } }];"
+      },
+      "id": "37555eeb-7ace-49ed-a72d-556305bc1f54",
+      "name": "Log Rechazado Personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-personal-email@gmail.com",
+        "subject": "=[ITCPR AutoPost] ❌ Rechazado — Perfil Personal | {{ $('Extraer Texto y Prompt').first().json._tema }}",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Calibri,sans-serif;max-width:620px;margin:0 auto;padding:0;background:#f0f4f8'><div style='background:#dc3545;padding:24px;text-align:center'><h2 style='color:white;margin:0;font-size:20px'>❌ Post Rechazado — Perfil Personal</h2></div><div style='background:white;padding:20px 24px'><p style='color:#555;margin:0 0 6px 0'><strong>Tema:</strong> {{ $('Extraer Texto y Prompt').first().json._tema }}</p><p style='color:#555;margin:0 0 6px 0'><strong>Slot:</strong> {{ $('Extraer Texto y Prompt').first().json._slot }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $('Extraer Texto y Prompt').first().json._tipo }}</p><p style='color:#666;margin:16px 0 0 0'>El post fue rechazado y no se publicará en LinkedIn.</p><hr style='border:none;border-top:1px solid #eee;margin:16px 0'><h4 style='color:#666;margin:0 0 10px 0;font-size:14px'>📝 Texto que fue rechazado:</h4><div style='background:#fff5f5;padding:14px;border-left:4px solid #dc3545;border-radius:4px'><p style='margin:0;white-space:pre-wrap;color:#555;font-size:13px;line-height:1.6'>{{ $('Extraer Post Final Personal').first().json.post_final_personal }}</p></div></div><div style='text-align:center;padding:14px;background:#f0f4f8'><p style='color:#bbb;font-size:11px;margin:0'>ITCPR LeadForge AI — IT Consultants PR, Inc.</p></div></body></html>",
+        "options": {}
+      },
+      "id": "20fa4a28-a03c-49cc-b6ec-1aaedd15cff5",
+      "name": "Email Descartado Personal",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        224,
+        624
+      ],
+      "webhookId": "9b72bf6c-798c-44b4-9be8-f6c82940caf9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DJxIiGgBgUcg32r8",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule 3x Day": {
+      "main": [
+        [
+          {
+            "node": "Determinar Slot y Tema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determinar Slot y Tema": {
+      "main": [
+        [
+          {
+            "node": "Limpiar con GPT Mini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar con GPT Mini": {
+      "main": [
+        [
+          {
+            "node": "Extraer Limpieza GPT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Limpieza GPT": {
+      "main": [
+        [
+          {
+            "node": "Estructurar con GPT Mini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estructurar con GPT Mini": {
+      "main": [
+        [
+          {
+            "node": "Extraer Estructura GPT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Estructura GPT": {
+      "main": [
+        [
+          {
+            "node": "Construir Body Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Body Claude": {
+      "main": [
+        [
+          {
+            "node": "Generar Contenido con Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Contenido con Claude": {
+      "main": [
+        [
+          {
+            "node": "Extraer Texto y Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Texto y Prompt": {
+      "main": [
+        [
+          {
+            "node": "Post-procesar Empresa GPT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post-procesar Empresa GPT": {
+      "main": [
+        [
+          {
+            "node": "Extraer Post Final Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Post Final Empresa": {
+      "main": [
+        [
+          {
+            "node": "Post-procesar Personal GPT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email Aprobación Empresa": {
+      "main": [
+        [
+          {
+            "node": "Wait Aprobación Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Aprobación Empresa": {
+      "main": [
+        [
+          {
+            "node": "Aprobado Empresa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aprobado Empresa?": {
+      "main": [
+        [
+          {
+            "node": "Registrar Upload Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Rechazado Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Rechazado Empresa": {
+      "main": [
+        [
+          {
+            "node": "Email Descartado Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Tarea Kie.ai Empresa": {
+      "main": [
+        [
+          {
+            "node": "Extraer Task ID Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Task ID Empresa": {
+      "main": [
+        [
+          {
+            "node": "Wait 45s Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 45s Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Consultar Estado Kie.ai Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estado Kie.ai Empresa": {
+      "main": [
+        [
+          {
+            "node": "Imagen Lista Empresa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imagen Lista Empresa?": {
+      "main": [
+        [
+          {
+            "node": "Extraer URL Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Wait Retry Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Retry Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Consultar Estado Retry Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estado Retry Empresa": {
+      "main": [
+        [
+          {
+            "node": "Imagen Lista Retry Empresa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imagen Lista Retry Empresa?": {
+      "main": [
+        [
+          {
+            "node": "Extraer URL Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error Final Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error Final Empresa": {
+      "main": [
+        [
+          {
+            "node": "Wait Retry2 Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Retry2 Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Consultar Estado Retry2 Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estado Retry2 Empresa": {
+      "main": [
+        [
+          {
+            "node": "Imagen Lista Retry2 Empresa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imagen Lista Retry2 Empresa?": {
+      "main": [
+        [
+          {
+            "node": "Extraer URL Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error Definitivo Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer URL Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Crear Tarea Kie.ai Personal",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enviar Email Aprobación Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Upload Empresa": {
+      "main": [
+        [
+          {
+            "node": "Extraer Upload Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Upload Empresa": {
+      "main": [
+        [
+          {
+            "node": "Descargar Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Subir Imagen Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir Imagen Empresa": {
+      "main": [
+        [
+          {
+            "node": "Publicar LinkedIn Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publicar LinkedIn Empresa": {
+      "main": [
+        [
+          {
+            "node": "Email Publicado Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post-procesar Personal GPT": {
+      "main": [
+        [
+          {
+            "node": "Extraer Post Final Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Post Final Personal": {
+      "main": [
+        [
+          {
+            "node": "Crear Tarea Kie.ai Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email Aprobación Personal": {
+      "main": [
+        [
+          {
+            "node": "Wait Aprobación Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Aprobación Personal": {
+      "main": [
+        [
+          {
+            "node": "Aprobado Personal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aprobado Personal?": {
+      "main": [
+        [
+          {
+            "node": "Registrar Upload Personal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Rechazado Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Rechazado Personal": {
+      "main": [
+        [
+          {
+            "node": "Email Descartado Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Tarea Kie.ai Personal": {
+      "main": [
+        [
+          {
+            "node": "Extraer Task ID Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Task ID Personal": {
+      "main": [
+        [
+          {
+            "node": "Wait 45s Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 45s Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Consultar Estado Kie.ai Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estado Kie.ai Personal": {
+      "main": [
+        [
+          {
+            "node": "Imagen Lista Personal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imagen Lista Personal?": {
+      "main": [
+        [
+          {
+            "node": "Extraer URL Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Wait Retry Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Retry Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Consultar Estado Retry Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estado Retry Personal": {
+      "main": [
+        [
+          {
+            "node": "Imagen Lista Retry Personal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imagen Lista Retry Personal?": {
+      "main": [
+        [
+          {
+            "node": "Extraer URL Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error Final Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error Final Personal": {
+      "main": [
+        [
+          {
+            "node": "Wait Retry2 Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Retry2 Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Consultar Estado Retry2 Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estado Retry2 Personal": {
+      "main": [
+        [
+          {
+            "node": "Imagen Lista Retry2 Personal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imagen Lista Retry2 Personal?": {
+      "main": [
+        [
+          {
+            "node": "Extraer URL Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error Definitivo Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer URL Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email Aprobación Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Upload Personal": {
+      "main": [
+        [
+          {
+            "node": "Extraer Upload Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Upload Personal": {
+      "main": [
+        [
+          {
+            "node": "Descargar Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Subir Imagen Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir Imagen Personal": {
+      "main": [
+        [
+          {
+            "node": "Publicar LinkedIn Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publicar LinkedIn Personal": {
+      "main": [
+        [
+          {
+            "node": "Email Publicado Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Publicado Personal": {
+      "main": [
+        [
+          {
+            "node": "Guardar en PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f7525cb0-333a-46ba-8754-a08f95a35262",
+  "meta": {
+    "instanceId": "1e8466d265d25bc2211bf916d658d5c23f958a7c94d11cf1ca6fec6812c75f7c"
+  },
+  "id": "f5RMwWh0jNE5bvtU",
+  "tags": []
+}

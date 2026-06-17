@@ -24,7 +24,7 @@ Publishes to both a company page and a personal profile daily, drawing from a 60
 
 ---
 
-### [Ombraxis AI](./ombraxis-ai)
+### Pentesting AI 
 **Managed pentesting SaaS — AI vulnerability analysis + compliance reporting**
 
 Multi-tenant SaaS platform for security consultants. Orchestrates nmap, nikto, nuclei, and masscan; routes raw output to Claude Sonnet for business-risk narrative; and generates DOCX, PDF, and Excel reports mapped to NIST CSF 2.0, HIPAA, CMMC Level 2, and PCI DSS 4.0. Delivered across 15 sprints — from auth scaffold to scheduled compliance report delivery.

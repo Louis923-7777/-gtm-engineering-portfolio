@@ -1,18 +1,46 @@
-# LeadForge AI
+# 🚀 LeadForge AI v6.0
 
-Automated B2B outbound system for IT consulting firms — AI-powered lead scoring, sector segmentation, and multi-cadence email campaigns. Built with n8n, PostgreSQL, and Claude AI.
+Full-stack B2B outbound automation engine built with n8n, PostgreSQL, and Claude AI. Deployed in production for Puerto Rico and US continental market campaigns.
 
 ---
 
-## What it does
+## What It Does
 
 LeadForge automates the full outbound motion from raw contact list to personalized email delivery:
 
-1. **Import** — uploads a CSV of prospects via n8n form trigger
+1. **Import** — upload a CSV of prospects via n8n form trigger
 2. **Score** — Claude Haiku evaluates each prospect (0–100) and classifies sector
-3. **Segment** — routes prospects to sector-specific email tracks (gobierno, salud, municipio, cooperativa, privado)
-4. **Send** — delivers personalized emails on a MON/WED/FRI cadence, each with a different angle (educational → case study → offer/CTA)
+3. **Segment** — routes prospects to sector-specific email tracks (government, health, municipality, cooperative, private)
+4. **Send** — delivers personalized emails on a Mon/Wed/Fri cadence, each with a different angle (educational → case study → offer/CTA)
 5. **Track** — logs every send to PostgreSQL, updates prospect sequence step
+6. **Listen** — monitors Gmail for replies, bounces, and unsubscribes in real time
+7. **Intelligence** — scans ComprasPR and Google Alerts for inbound RFP and market opportunities
+
+---
+
+## System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      INBOUND INTELLIGENCE                        │
+│  05 ComprasPR Monitor (4x/day)  ──► AI scoring ──► leads DB    │
+│  06 Google Alerts RSS (8am)     ──► AI scoring ──► leads DB    │
+│  07 Followup Message Generator  ──► AI message ──► your inbox  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                        OUTBOUND ENGINE                           │
+│  02 Prospect Import  ──► Haiku scoring ──► prospects DB         │
+│  03 Campaign Engine (Mon/Wed/Fri) ──► Sonnet ──► Gmail send    │
+│  04 Reply Handler (every 15min) ──► classify ──► suppress/HOT  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                      REPORTING & VISIBILITY                      │
+│  08 Weekly Analytics (Saturday 8am) ──► HTML report ──► inbox  │
+│  09 Dashboard API (GET /lf6-dashboard) ──► live JSON ──► UI    │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -20,153 +48,122 @@ LeadForge automates the full outbound motion from raw contact list to personaliz
 
 | Layer | Tool |
 |-------|------|
-| Workflow automation | n8n (self-hosted) |
+| Workflow automation | n8n (self-hosted, Docker) |
 | Database | PostgreSQL 17 |
-| AI scoring & copy | Claude Haiku (`claude-haiku-4-5-20251001`) |
-| Email delivery | Microsoft 365 SMTP |
-| Infra | Docker on EasyPanel VPS |
+| AI — scoring & classification | Claude Haiku (`claude-haiku-4-5-20251001`) |
+| AI — email copywriting | Claude Sonnet (`claude-sonnet-4-6`) |
+| Email delivery | Gmail (OAuth2) |
+| Infra | Docker on EasyPanel VPS (Hostinger) |
 | DB management | DbGate |
-
----
-
-## Database schema
-
-```sql
-prospects          -- 685 contacts, AI-scored, sector-classified
-campaign_topics    -- 9 email topics (MON/WED/FRI × sector)
-email_log          -- full send history with status tracking
-suppression_list   -- unsubscribes and bounces
-v_campaign_eligible -- view: active prospects not over-contacted
-```
-
----
-
-## Email cadence
-
-| Day | Angle | Example sectors |
-|-----|-------|----------------|
-| Monday | Educational | FEMA BRIC funds for municipalities, COSSEC compliance for cooperativas |
-| Wednesday | Case study | FortiGate security eval for gobierno, Microsoft licensing for salud |
-| Friday | Offer / CTA | Free cybersecurity assessment, COSSEC compliance diagnostic |
-
-Topics are sector-matched first, then fall back to `general` if no sector-specific topic exists.
 
 ---
 
 ## Workflows
 
-| File | Function |
-|------|----------|
-| `02-prospect-import.json` | CSV upload → dedup → Claude Haiku scoring → PostgreSQL insert |
-| `03-email-campaign.json` | Schedule trigger → eligible prospects → Claude Haiku email generation → SMTP send → log |
-| `05-google-alerts-monitor.json` | Monitors government procurement alerts for trigger events |
+| # | File | Description |
+|---|------|-------------|
+| 02 | `02-WF-prospect-import.json` | CSV upload → normalize → Haiku scoring → PostgreSQL |
+| 03 | `03-WF-campaign-engine.json` | Mon/Wed/Fri send engine — Sonnet email generation, 45s throttle, CAN-SPAM footer |
+| 04 | `04-WF-reply-handler.json` | Polls Gmail every 15min — classifies replies, bounces, and unsubscribes |
+| 05 | `05-WF-compraspR-monitor.json` | Scans Gmail 4x/day for ComprasPR RFPs — AI scores and alerts on high-value bids |
+| 06 | `06-WF-google-alerts-monitor.json` | Reads 3 RSS feeds daily — scores opportunities and sends morning digest |
+| 07 | `07-WF-followup-message-generator.json` | Generates D3/D7/D30 followup messages for qualified leads — delivered to inbox for manual send |
+| 08 | `08-WF-weekly-analytics.json` | Saturday report — sends, replies, reply rate, and hot leads by angle |
+| 09 | `09-WF-dashboard-api.json` | Authenticated webhook returning live KPIs, 30-day series, and full prospect list |
 
----
-
-## Lead scoring logic
-
-Claude Haiku receives prospect data (company, title, sector) and returns:
-
+**Lead scoring output (workflow 02):**
 ```json
 {
   "lead_score": 74,
-  "sector": "gobierno",
+  "sector": "government",
   "notes": "Director-level at municipal agency — high fit for FEMA compliance services"
 }
 ```
 
-Scoring factors: title seniority, sector fit for IT consulting, company type, geographic relevance (Puerto Rico government/health/coop ecosystem).
-
 ---
 
-## Architecture
+## Database
 
-```
-CSV Upload
-    │
-    ▼
-n8n: Extract + Normalize + Dedup
-    │
-    ▼
-Claude Haiku: Score (0-100) + Classify sector
-    │
-    ▼
-PostgreSQL: prospects table (UPSERT, conflict-safe)
-    │
-    ▼
-Schedule Trigger (MON/WED/FRI 9am)
-    │
-    ▼
-v_campaign_eligible → JOIN campaign_topics (by day_slot + sector)
-    │
-    ▼
-Claude Haiku: Generate personalized subject + body
-    │
-    ▼
-Microsoft 365 SMTP: Send from your-email@company.com
-    │
-    ▼
-PostgreSQL: email_log INSERT + prospects UPDATE (last_email_at, sequence_step)
+```sql
+prospects           -- All contacts, AI-scored and sector-classified
+campaign_topics     -- Email topics by day_slot x sector (MON/WED/FRI)
+email_log           -- Every send: status, angle, day_slot, message_id
+suppression_list    -- Unsubscribes and hard bounces (never emailed again)
+leads               -- Inbound opportunities from ComprasPR and Google Alerts
+v_campaign_eligible -- View: active prospects eligible for next send
 ```
 
 ---
 
-## Key GTM decisions
+## Email Cadence
 
-**Why sector-based segmentation instead of one blast?**
-Puerto Rico's B2B market segments sharply by vertical — a municipio has FEMA BRIC budget cycles, a cooperativa has COSSEC compliance pressure, a hospital has HIPAA exposure. Generic emails perform poorly. Sector-matched messaging drives reply rates.
+| Day | Angle | Focus |
+|-----|-------|-------|
+| Monday | Educational | Funding cycles, compliance awareness |
+| Wednesday | Case study | Real deployments, measurable outcomes |
+| Friday | Offer / CTA | Free assessment, diagnostic offer |
 
-**Why MON/WED/FRI cadence?**
-Avoids Monday morning inbox saturation (send mid-morning), uses Wednesday as the highest-open-rate day for B2B, closes the week with a low-friction CTA. Classic outbound pattern validated across SaaS GTM playbooks.
-
-**Why Claude Haiku for copy generation instead of templates?**
-Templates require manual maintenance per sector × angle × product. Haiku generates contextually relevant copy at runtime using prospect data — scales to any new sector without template updates.
-
-**Why AI scoring before sending?**
-Prioritizes high-fit prospects (score 70+) in send order. Protects sender reputation by not burning the domain on low-fit contacts. Feeds future A/B testing by segment.
+Topics are sector-matched per prospect. Fallback to `general` if no sector-specific topic exists for that slot.
 
 ---
 
 ## Setup
 
 ### Prerequisites
-- n8n (self-hosted or cloud)
-- PostgreSQL database named `leadforge`
+- n8n self-hosted (Docker)
+- PostgreSQL 17 — database named `leadforge`
 - Anthropic API key
-- Microsoft 365 mailbox with SMTP AUTH enabled
+- Gmail account with OAuth2 configured in n8n
 
 ### Database
 ```bash
-# Run against your PostgreSQL instance
-psql -U your_user -d leadforge -f n8n-workflows/setup-db-v3.sql
+psql -U your_user -d leadforge -f setup-db-v3.sql
 ```
 
-### n8n credentials needed
-| Credential name | Type | Used for |
-|----------------|------|---------|
-| `Postgres account 2` | PostgreSQL | All DB queries |
-| `Header Auth account` | HTTP Header Auth | Anthropic API (`x-api-key`) |
-| `ITCPR Microsoft 365` | SMTP | Email delivery |
+### Environment Variables
+```env
+ANTHROPIC_API_KEY=your_anthropic_key
+LF6_DASHBOARD_KEY=your_dashboard_secret_key
+```
 
-### Import workflows
-In n8n: **Workflows → Import from file** → select each `.json` in `n8n-workflows/`
+### n8n Credentials
+
+| Name | Type |
+|------|------|
+| `LeadForge PostgreSQL` | PostgreSQL |
+| `Header Auth account` | HTTP Header Auth (`x-api-key`) |
+| `Gmail account 2` | Gmail OAuth2 |
+
+### Import Order
+In n8n: **Workflows → Import from file** — import in numerical order (02 → 09).
+
+> **Google Alerts setup (workflow 06):** Create three RSS alerts at [google.com/alerts](https://google.com/alerts) and replace the `REPLACE_WITH_RSS_URL_X` placeholders in the workflow nodes.
 
 ---
 
-## Results (685 prospects imported)
+## Results (Production — 685 Prospects)
 
 | Sector | Prospects | Avg AI Score |
 |--------|-----------|-------------|
-| gobierno | 172 | 74 |
-| salud | 141 | 76 |
-| privado | 123 | 49 |
-| municipio | 118 | 76 |
-| cooperativa | 69 | 67 |
-| general | 62 | 37 |
+| Government | 172 | 74 |
+| Health | 141 | 76 |
+| Private | 123 | 49 |
+| Municipality | 118 | 76 |
+| Cooperative | 69 | 67 |
+| General | 62 | 37 |
 
 ---
 
-## Author
+## Related Projects
 
-**Luis Rivera** — GTM Engineer
-IBM Silver Partner · Microsoft · Cisco · Fortinet · Dell EMC · VMware
+| Repo | Description |
+|------|-------------|
+| [`clay-gtm-pipeline`](../clay-gtm-pipeline) | Clay enrichment pipeline feeding this engine |
+| [`linkedin-autopost`](../linkedin-autopost) | AI-powered LinkedIn content automation |
+
+---
+
+## About
+
+Built by **Luis Daniel Rivera** — GTM Engineer & Network Engineer  
+📧 danielriverarios@gmail.com

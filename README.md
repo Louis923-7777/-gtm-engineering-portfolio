@@ -24,30 +24,6 @@ Publishes to both a company page and a personal profile daily, drawing from a 60
 
 ---
 
-### Pentesting AI 
-**Managed pentesting SaaS — AI vulnerability analysis + compliance reporting**
-
-Multi-tenant SaaS platform for security consultants. Orchestrates nmap, nikto, nuclei, and masscan; routes raw output to Claude Sonnet for business-risk narrative; and generates DOCX, PDF, and Excel reports mapped to NIST CSF 2.0, HIPAA, CMMC Level 2, and PCI DSS 4.0. Delivered across 15 sprints — from auth scaffold to scheduled compliance report delivery.
-
-`FastAPI` `PostgreSQL` `Redis` `Docker` `Claude Sonnet` `python-docx` `openpyxl` `JWT` `TOTP MFA`
-
----
-
-## What I build
-
-I work at the intersection of sales, marketing, and engineering — building the systems that make revenue motions run without manual intervention.
-
-| Capability | What that looks like |
-|------------|---------------------|
-| **Outbound automation** | Lead scoring, email sequencing, suppression logic, cadence management |
-| **AI-powered copy** | Sector-specific email generation, LinkedIn content at scale, runtime personalization |
-| **Data pipelines** | CSV ingestion, dedup, normalization, PostgreSQL as CRM source of truth |
-| **Revenue ops** | Prospect lifecycle tracking, sequence steps, engagement logging |
-| **Content systems** | Multi-account publishing, approval workflows, topic rotation, image generation |
-| **Compliance reporting** | NIST, HIPAA, CMMC, PCI DSS — automated gap analysis and executive-ready reports |
-
----
-
 ## Stack
 
 ```
